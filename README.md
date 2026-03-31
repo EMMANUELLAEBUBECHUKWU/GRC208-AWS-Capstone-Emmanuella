@@ -63,16 +63,16 @@ The platform is built on a multi-tier VPC architecture with public and private s
 
 **Data Layer**
 
-- Amazon RDS MySQL 8.0 (grc-capstone-db, db.t3.micro) — GRC relational data
-- Amazon S3 — evidence storage and compliance reports
-- Amazon DynamoDB — three tables for real-time compliance status
-- AWS S3-based encryption (AES256) — Free Tier compatible
+- Amazon RDS MySQL 8.0 (grc-capstone-db, db.t3.micro): GRC relational data
+- Amazon S3: evidence storage and compliance reports
+- Amazon DynamoDB:  three tables for real-time compliance status
+- AWS S3-based encryption (AES256):  Free Tier compatible
 
 **Application Layer**
 
-- AWS Lambda (grc-compliance-monitor) — hourly compliance automation
-- Amazon ECS Fargate — containerised GRC dashboard application
-- AWS EventBridge — hourly schedule triggering compliance Lambda
+- AWS Lambda (grc-compliance-monitor): hourly compliance automation
+- Amazon ECS Fargate: containerised GRC dashboard application
+- AWS EventBridge: hourly schedule triggering compliance Lambda
 
 **Security & Compliance Layer**
 
