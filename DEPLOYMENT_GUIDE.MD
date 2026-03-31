@@ -96,7 +96,7 @@ aws cloudformation describe-stacks \
 
 ## Phase 2: Database Infrastructure (~14 minutes)
 
-### Important — Free Tier Template Modifications
+### Important: Free Tier Template Modifications
 
 The original CloudFormation database template required three modifications for AWS Free Tier compatibility:
 
@@ -230,7 +230,7 @@ Expected: `{"statusCode": 200, "body": "{\"message\": \"Compliance monitoring co
 
 ## Phase 4: Monitoring & Config (~8 minutes)
 
-### AWS Config — Fully Operational
+### AWS Config: Fully Operational
 
 This phase resolves the constraint from the Learner Lab. A dedicated config role is created with full permissions.
 
@@ -497,7 +497,7 @@ aws s3 ls | grep grc
 
 -----
 
-## Troubleshooting — Challenges Encountered During Deployment
+## Troubleshooting: Challenges Encountered During Deployment
 
 ### Challenge 1: RDS CloudFormation Rollback — Free Tier Incompatible Settings
 
