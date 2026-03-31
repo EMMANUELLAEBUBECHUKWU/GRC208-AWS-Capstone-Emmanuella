@@ -14,7 +14,7 @@
 
 This deployment was carried out following a mandatory directive from the ICDFA Directorate of Training requiring all GRC Engineering Batch A2025 students to migrate their capstone from the AWS Academy Learner Lab to a personal AWS Free Tier account. The directive cited security hardening measures in the Learner Lab that limited access required for capstone work.
 
-This personal account deployment resolves the one known constraint from the Learner Lab — the AWS Config delivery channel is now fully operational.
+This personal account deployment resolves the one known constraint from the Learner Lab, the AWS Config delivery channel is now fully operational.
 
 -----
 
