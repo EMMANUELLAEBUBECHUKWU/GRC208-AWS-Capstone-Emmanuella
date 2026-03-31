@@ -1,0 +1,235 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GRC Platform - Database Infrastructure Stack'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: grc-capstone
+    Description: Environment name prefix
+  
+  DBName:
+    Type: String
+    Default: grcdb
+    Description: Database name
+  
+  DBUsername:
+    Type: String
+    NoEcho: true
+    Description: Database master username
+  
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: Database master password
+    MinLength: 8
+  
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    Description: RDS instance class
+  
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+    Description: Allocated storage in GB
+
+Resources:
+  # RDS Subnet Group
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for RDS database
+      SubnetIds:
+        - !ImportValue grc-capstone-private-subnet-1-id
+        - !ImportValue grc-capstone-private-subnet-2-id
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-db-subnet-group'
+
+  # RDS MySQL Database
+  GrcDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub '${EnvironmentName}-db'
+      Engine: mysql
+      EngineVersion: '8.0.40'
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref AllocatedStorage
+      StorageType: gp2
+      StorageEncrypted: false
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups:
+        - !ImportValue grc-capstone-rds-sg-id
+      BackupRetentionPeriod: 0
+      MultiAZ: false
+      DeletionProtection: false
+      PubliclyAccessible: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-mysql-db'
+
+  # S3 Bucket for Evidence Storage
+  EvidenceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${EnvironmentName}-evidence-bucket-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-evidence-bucket'
+
+  # S3 Bucket for Compliance Reports
+  ComplianceReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${EnvironmentName}-compliance-reports-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-compliance-reports'
+
+  # DynamoDB Table for Compliance Status
+  ComplianceStatusTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: grc-compliance-status
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: timestamp
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-compliance-status-table'
+
+  # DynamoDB Table for Risk Register
+  RiskRegisterTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: grc-risk-register
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: risk_id
+          AttributeType: S
+        - AttributeName: assessment_date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: risk_id
+          KeyType: HASH
+        - AttributeName: assessment_date
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: assessment_date_index
+          KeySchema:
+            - AttributeName: assessment_date
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-risk-register-table'
+
+  # DynamoDB Table for Controls
+  ControlsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: grc-controls
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: control_id
+          AttributeType: S
+        - AttributeName: framework
+          AttributeType: S
+      KeySchema:
+        - AttributeName: control_id
+          KeyType: HASH
+        - AttributeName: framework
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: framework_index
+          KeySchema:
+            - AttributeName: framework
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-controls-table'
+
+Outputs:
+  DatabaseEndpoint:
+    Description: RDS Database Endpoint
+    Value: !GetAtt GrcDatabase.Endpoint.Address
+    Export:
+      Name: !Sub '${EnvironmentName}-db-endpoint'
+
+  DatabasePort:
+    Description: RDS Database Port
+    Value: !GetAtt GrcDatabase.Endpoint.Port
+    Export:
+      Name: !Sub '${EnvironmentName}-db-port'
+
+  DatabaseName:
+    Description: Database Name
+    Value: !Ref DBName
+    Export:
+      Name: !Sub '${EnvironmentName}-db-name'
+
+  EvidenceBucketName:
+    Description: Evidence Storage Bucket Name
+    Value: !Ref EvidenceBucket
+    Export:
+      Name: !Sub '${EnvironmentName}-evidence-bucket'
+
+  ComplianceReportsBucketName:
+    Description: Compliance Reports Bucket Name
+    Value: !Ref ComplianceReportsBucket
+    Export:
+      Name: !Sub '${EnvironmentName}-compliance-reports-bucket'
+
+  ComplianceStatusTableName:
+    Description: Compliance Status DynamoDB Table
+    Value: !Ref ComplianceStatusTable
+    Export:
+      Name: !Sub '${EnvironmentName}-compliance-status-table'
+
+  RiskRegisterTableName:
+    Description: Risk Register DynamoDB Table
+    Value: !Ref RiskRegisterTable
+    Export:
+      Name: !Sub '${EnvironmentName}-risk-register-table'
+
+  ControlsTableName:
+    Description: Controls DynamoDB Table
+    Value: !Ref ControlsTable
+    Export:
+      Name: !Sub '${EnvironmentName}-controls-table'
