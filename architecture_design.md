@@ -1,6 +1,6 @@
 # Architecture Design
 
-## GRC208 AWS Integrated GRC Platform — System Architecture and Design Decisions
+## GRC208 AWS Integrated GRC Platform - System Architecture and Design Decisions
 
 **Author:** Emmanuella Ebubechukwu  
 **Student ID:** 2025/GRC/10041  
@@ -19,17 +19,17 @@ This document describes the system architecture of the GRC208 AWS Integrated GRC
 ### Network Topology
 
 ```
-AWS Account 851417232379 — Personal Free Tier
+AWS Account 851417232379 - Personal Free Tier
 └── VPC vpc-0be0c82b0410f8aa2 (10.0.0.0/16)
-    ├── Public Subnet 1 (us-east-1a) — subnet-02ba654ce8daa9d1d
+    ├── Public Subnet 1 (us-east-1a) - subnet-02ba654ce8daa9d1d
     │   └── NAT Gateway
-    ├── Public Subnet 2 (us-east-1b) — subnet-0edbeab2518dfcd50
+    ├── Public Subnet 2 (us-east-1b) - subnet-0edbeab2518dfcd50
     │   └── Application Load Balancer
-    ├── Private Subnet 1 (us-east-1a) — subnet-0d74b2d4d999cad13
+    ├── Private Subnet 1 (us-east-1a) - subnet-0d74b2d4d999cad13
     │   ├── Lambda: grc-compliance-monitor
     │   ├── Lambda: grc-db-loader
     │   └── RDS MySQL: grc-capstone-db
-    └── Private Subnet 2 (us-east-1b) — subnet-0f721402eb0d1e9ce
+    └── Private Subnet 2 (us-east-1b) - subnet-0f721402eb0d1e9ce
         ├── Lambda (secondary AZ)
         └── RDS (secondary AZ)
 ```
@@ -52,7 +52,7 @@ AWS Account 851417232379 — Personal Free Tier
 |RDS SG        |sg-0f876e997d5067329|Controls access to RDS MySQL   |
 
 **Self-referencing rule added during deployment:**
-A self-referencing inbound rule on port 3306 was added to sg-0f876e997d5067329. This allows resources in the same security group (Lambda functions) to connect to RDS on the MySQL port. This rule was discovered to be necessary when the data loader Lambda could not reach RDS — it is a required step in any deployment of this platform.
+A self-referencing inbound rule on port 3306 was added to sg-0f876e997d5067329. This allows resources in the same security group (Lambda functions) to connect to RDS on the MySQL port. This rule was discovered to be necessary when the data loader Lambda could not reach RDS - it is a required step in any deployment of this platform.
 
 -----
 
@@ -61,11 +61,11 @@ A self-referencing inbound rule on port 3306 was added to sg-0f876e997d5067329. 
 ```
 AWS Resources (EC2, RDS, S3, Lambda, etc.)
          ↓
-AWS Config — grc-config-recorder (596 resource types, continuous)
+AWS Config - grc-config-recorder (596 resource types, continuous)
          ↓  [Delivery channel active → grc-config-bucket-851417232379]
-Amazon EventBridge — grc-compliance-check (rate 1 hour)
+Amazon EventBridge - grc-compliance-check (rate 1 hour)
          ↓
-AWS Lambda — grc-compliance-monitor (Python 3.11, VPC-connected)
+AWS Lambda - grc-compliance-monitor (Python 3.11, VPC-connected)
     ├── Calculates compliance percentage
     ├── Classifies risk level (Low / Medium / High / Critical)
     ├── Writes real-time result → DynamoDB (grc-compliance-status)
@@ -163,7 +163,7 @@ timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 
 **Rationale:** A GRC platform handles compliance data, risk assessments, and audit logs. Placing RDS in a private subnet is a standard security control that maps directly to network isolation requirements in ISO 27001, NIST, and SOC 2.
 
-**Consequence encountered:** The deployment guide assumed a direct mysql connection to the database endpoint. This was not possible from CloudShell because the endpoint is in a private subnet. The solution — deploying a VPC-connected Lambda function with pymysql packaged — is more production-appropriate and more secure than a public endpoint.
+**Consequence encountered:** The deployment guide assumed a direct mysql connection to the database endpoint. This was not possible from CloudShell because the endpoint is in a private subnet. The solution - deploying a VPC-connected Lambda function with pymysql packaged - is more production-appropriate and more secure than a public endpoint.
 
 -----
 
@@ -203,7 +203,7 @@ timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 
 **Rationale:** This was the one unresolved constraint from the Learner Lab deployment. In a personal account, creating a dedicated `grc-config-role` with `AWS_ConfigRole` policy and S3 access resolves this completely.
 
-**Result:** Config recorder confirmed `recording: true, lastStatus: SUCCESS` — 596 resource types being monitored continuously.
+**Result:** Config recorder confirmed `recording: true, lastStatus: SUCCESS` - 596 resource types being monitored continuously.
 
 -----
 
@@ -231,12 +231,12 @@ timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 
 The platform was deployed in five sequential phases:
 
-1. **Network first** — VPC and subnets must exist before compute or database resources
-1. **Database second** — Lambda and application need the database to exist first
-1. **Lambda third** — deployed after network and database with IAM role created first
-1. **Monitoring fourth** — CloudTrail, Config, EventBridge, and CloudWatch configured once core platform is running
-1. **Data last** — sample data loaded after all infrastructure is confirmed working
+1. **Network first** - VPC and subnets must exist before compute or database resources
+1. **Database second** - Lambda and application need the database to exist first
+1. **Lambda third** - deployed after network and database with IAM role created first
+1. **Monitoring fourth** - CloudTrail, Config, EventBridge, and CloudWatch configured once core platform is running
+1. **Data last** - sample data loaded after all infrastructure is confirmed working
 
 -----
 
-*Last updated: March 31, 2026 — Emmanuella Ebubechukwu*
+*Last updated: March 31, 2026 - Emmanuella Ebubechukwu*
